@@ -1,0 +1,24 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+title Передача ставок в колл-центр
+
+Person(cc_operator, "Оператор колл-центра банка", "Консультирует клиентов по ставкам")
+Person(rate_manager, "Сотрудник, ведущий ставки", "Загружает ставки из XLS")
+Person(partner_operator, "Оператор партнёрского колл-центра", "Консультирует клиентов по ставкам из файла")
+
+System_Boundary(bank, "Банк") {
+  System(rates_mvp, "Компонент ставок (MVP)", "Импорт XLS, версии ставок, выдача ставок, выгрузка файла партнёру")
+  System_Ext(crm_cc, "CRM колл-центра банка", "Рабочее место операторов")
+  System_Ext(file_channel, "Канал обмена файлами (SFTP)", "Канал передачи файла партнёру (без API-вызовов)")
+}
+
+System_Ext(partner_cc_sys, "Система партнёрского колл-центра", "Внешняя система партнёра")
+
+Rel(rate_manager, rates_mvp, "Загружает XLS со ставками", "Внутренний интерфейс")
+Rel(cc_operator, crm_cc, "Смотрит ставки при консультации", "UI")
+Rel(crm_cc, rates_mvp, "Запрашивает актуальные ставки", "Внутренний вызов")
+Rel(rates_mvp, file_channel, "Выгружает файл ставок (версия/дата)", "Файл")
+Rel(file_channel, partner_cc_sys, "Партнёр получает файл", "Файл")
+Rel(partner_operator, partner_cc_sys, "Консультирует по ставкам", "UI")
+
+@enduml

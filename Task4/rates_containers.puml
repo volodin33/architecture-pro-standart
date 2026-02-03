@@ -1,0 +1,30 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+title Передача ставок в колл-центр
+
+Person(cc_operator, "Оператор колл-центра банка", "CRM")
+Person(rate_manager, "Сотрудник, ведущий ставки", "Импорт XLS")
+Person(partner_operator, "Оператор партнёрского колл-центра", "Внешняя система")
+
+System_Ext(crm_cc, "CRM колл-центра банка", "Рабочее место операторов")
+System_Ext(file_channel, "Канал обмена файлами (SFTP)", "Канал передачи файла (без API)")
+System_Ext(partner_cc_sys, "Система партнёра", "Загрузка файла и консультации")
+
+System_Boundary(mvp, "Компонент ставок (MVP)") {
+  Container(rates_api, "API ставок", "Web API", "Выдача актуальных ставок для CRM/каналов")
+  ContainerDb(rates_db, "Хранилище ставок", "MS SQL / Oracle", "Версии ставок, даты актуальности, аудит")
+  Container(rates_import_ui, "Интерфейс импорта ставок", "Web UI (внутренний)", "Загрузка XLS, валидация, публикация версии")
+  Container(file_export_service, "Сервис интеграции", "Фоновый процесс", "Формирует файл ставок и передаёт в канал обмена")
+}
+
+Rel(rate_manager, rates_import_ui, "Загружает XLS", "HTTPS (внутренний)")
+Rel(rates_import_ui, rates_api, "Публикует новую версию", "Внутренний вызов")
+Rel(rates_api, rates_db, "Чтение/запись ставок/версий/аудита", "SQL")
+Rel(crm_cc, rates_api, "Запрашивает ставки для консультации", "Внутренний вызов")
+Rel(cc_operator, crm_cc, "Смотрит ставки", "UI")
+Rel(file_export_service, rates_db, "Читает актуальную версию ставок", "SQL")
+Rel(file_export_service, file_channel, "Выгружает файл ставок", "Файл")
+Rel(file_channel, partner_cc_sys, "Партнёр получает файл", "Файл")
+Rel(partner_operator, partner_cc_sys, "Консультирует клиентов", "UI")
+
+@enduml
